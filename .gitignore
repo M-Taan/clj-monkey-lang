@@ -1,0 +1,20 @@
+syntax: glob
+target/**
+lib/**
+classes/**
+checkouts/**
+pom.xml
+*.jar
+*.class
+*.*~
+\#*.*
+\#*.*\#
+.\#*.*\#
+.\#*.*
+log/**
+.git/**
+.classpath
+.clj-kondo/.cache
+.cpcache
+.lsp
+.nrepl-port
