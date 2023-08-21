@@ -3,46 +3,40 @@
    [monkey.tokens :as tokens]
    [monkey.utils :as utils]))
 
-(defn- read-char [input position]
-  (or (and (>= position (count input))
+(defn- read-char [in position]
+  (or (and (>= position (count in))
            0)
-      (nth input position)))
+      (nth in position)))
 
-(defn- read-identifier-or-keyword [{:keys [input position]}]
+(defn- read-until [predicate in starting-position]
   (loop [target ""
-         position position
-         ch (read-char input position)
+         position starting-position
+         ch (read-char in position)
          done? false]
     (if done?
-      {:token-with-literal {:token (tokens/match-identifier-or-keyword target)
-                            :literal target}
-       :read-at position
-       :position (dec position)}
-      (let [next-char (read-char input (inc position))]
+      {:target target
+       :exit-position position}
+      (let [next-char (read-char in (inc position))]
         (recur (or (and (= ch 0)
                         target)
                    (str target ch))
                (inc position)
                next-char
-               (not (utils/is-letter-or-underscore? next-char)))))))
+               (predicate next-char))))))
 
-(defn- read-number [{:keys [input position]}]
-  (loop  [target ""
-          position position
-          ch (read-char input position)
-          done? false]
-    (if done?
-      {:token-with-literal {:token tokens/+integer+
-                            :literal target}
-       :read-at position
-       :position (dec position)}
-      (let [next-char (read-char input (inc position))]
-        (recur (or (and (= ch 0)
-                        target)
-                   (str target ch))
-               (inc position)
-               next-char
-               (not (utils/is-digit? next-char)))))))
+(defn- read-identifier-or-keyword [{:keys [in start]}]
+  (let [read-value (read-until #(not (utils/is-letter-or-underscore? %)) in start)]
+    {:token-with-literal {:token (tokens/match-identifier-or-keyword (:target read-value))
+                          :literal (:target read-value)}
+     :read-at (:exit-position read-value)
+     :position (dec (:exit-position read-value))}))
+
+(defn- read-number [{:keys [in start]}]
+  (let [read-value (read-until #(not (utils/is-letter-or-underscore? %)) in start)]
+    {:token-with-literal {:token tokens/+integer+
+                          :literal (:target read-value)}
+     :read-at (:exit-position read-value)
+     :position (dec (:exit-position read-value))}))
 
 (defn- special-character->token-with-literal [ch]
   (condp = ch
@@ -63,14 +57,13 @@
     \+ {:token tokens/+plus+
         :literal ch}
     0 {:token tokens/+eof+
-       :literal ""}
-    nil))
+       :literal ""}))
 
-(defn lex [input]
+(defn lex [in]
   (loop [read-at 0
          current -1
          tokens []]
-    (let [ch (read-char input read-at)
+    (let [ch (read-char in read-at)
           skip-char? (utils/should-skip-char? ch)]
       (if skip-char?
         (recur (inc read-at)
@@ -80,10 +73,10 @@
                       (utils/is-special-character? ch) {:token-with-literal (special-character->token-with-literal ch)
                                                         :read-at (inc read-at)
                                                         :current read-at}
-                      (utils/is-letter-or-underscore? ch) (read-identifier-or-keyword {:input input
-                                                                                       :position read-at})
-                      (utils/is-digit? ch) (read-number {:input input
-                                                         :position read-at})
+                      (utils/is-letter-or-underscore? ch) (read-identifier-or-keyword {:in in
+                                                                                       :start read-at})
+                      (utils/is-digit? ch) (read-number {:in in
+                                                         :start read-at})
                       :else
                       {:token-with-literal {:token tokens/+illegal+
                                             :literal ch}
