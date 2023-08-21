@@ -26,6 +26,24 @@
                next-char
                (not (utils/is-letter-or-underscore? next-char)))))))
 
+(defn- read-number [{:keys [input position]}]
+  (loop  [target ""
+          position position
+          ch (read-char input position)
+          done? false]
+    (if done?
+      {:token-with-literal {:token tokens/+integer+
+                            :literal target}
+       :read-at position
+       :position (dec position)}
+      (let [next-char (read-char input (inc position))]
+        (recur (or (and (= ch 0)
+                        target)
+                   (str target ch))
+               (inc position)
+               next-char
+               (not (utils/is-digit? next-char)))))))
+
 (defn- special-character->token-with-literal [ch]
   (condp = ch
     \= {:token tokens/+assign+
@@ -64,6 +82,8 @@
                                                         :current read-at}
                       (utils/is-letter-or-underscore? ch) (read-identifier-or-keyword {:input input
                                                                                        :position read-at})
+                      (utils/is-digit? ch) (read-number {:input input
+                                                         :position read-at})
                       :else
                       {:token-with-literal {:token tokens/+illegal+
                                             :literal ch}

@@ -5,7 +5,7 @@
       (= ch \_)))
 
 (defn should-skip-char? [ch]
-  (or (= \n ch)
+  (or (= \newline ch)
       (= \r ch)
       (= \t ch)
       (= \space ch)))
@@ -16,3 +16,6 @@
       (= ch \{) (= ch \})
       (= ch \,) (= ch \+)
       (= ch 0)))
+
+(defn is-digit? [ch]
+  (Character/isDigit ch))
