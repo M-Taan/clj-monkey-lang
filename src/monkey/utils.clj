@@ -6,8 +6,6 @@
 
 (defn should-skip-char? [ch]
   (or (= \newline ch)
-      (= \r ch)
-      (= \t ch)
       (= \space ch)))
 
 (defn is-special-character? [ch]

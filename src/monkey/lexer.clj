@@ -32,7 +32,7 @@
      :position (dec (:exit-position read-value))}))
 
 (defn- read-number [{:keys [in start]}]
-  (let [read-value (read-until #(not (utils/is-letter-or-underscore? %)) in start)]
+  (let [read-value (read-until #(not (utils/is-digit? %)) in start)]
     {:token-with-literal {:token tokens/+integer+
                           :literal (:target read-value)}
      :read-at (:exit-position read-value)
