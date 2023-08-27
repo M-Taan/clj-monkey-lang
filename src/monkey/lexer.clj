@@ -28,15 +28,13 @@
   (let [read-value (read-until #(not (utils/is-letter-or-underscore? %)) in start)]
     {:token-with-literal {:token (tokens/match-identifier-or-keyword (:target read-value))
                           :literal (:target read-value)}
-     :read-at (:exit-position read-value)
-     :position (dec (:exit-position read-value))}))
+     :read-at (:exit-position read-value)}))
 
 (defn- read-number [{:keys [in start]}]
   (let [read-value (read-until #(not (utils/is-digit? %)) in start)]
     {:token-with-literal {:token tokens/+integer+
                           :literal (:target read-value)}
-     :read-at (:exit-position read-value)
-     :position (dec (:exit-position read-value))}))
+     :read-at (:exit-position read-value)}))
 
 (defn- special-character->token-with-literal [ch]
   (condp = ch
@@ -71,20 +69,43 @@
     0 {:token tokens/+eof+
        :literal ""}))
 
+(defn- peak-char [in peak-at]
+  (let [ch (read-char in peak-at)]
+    (if (utils/should-skip-char? ch)
+      (recur in (inc peak-at))
+      {:ch ch
+       :read-until (inc peak-at)})))
+
+(defn- read-special-character [{:keys [in start]}]
+  (let [ch (read-char in start)
+        default-map (fn []
+                      {:token-with-literal (special-character->token-with-literal ch)
+                       :read-at (inc start)})
+        peaked-char (peak-char in (inc start))]
+    (condp = ch
+      \= (or (and (= (:ch peaked-char) \=)
+                  {:token-with-literal {:token tokens/+equal+
+                                        :literal "=="}
+                   :read-at (:read-until peaked-char)})
+             (default-map))
+      \! (or (and (= (:ch peaked-char) \=)
+                  {:token-with-literal {:token tokens/+not-equal+
+                                        :literal"!="}
+                   :read-at (:read-until peaked-char)})
+             (default-map))
+      (default-map))))
+
 (defn lex [in]
   (loop [read-at 0
-         current -1
          tokens []]
     (let [ch (read-char in read-at)
           skip-char? (utils/should-skip-char? ch)]
       (if skip-char?
         (recur (inc read-at)
-               read-at
                tokens)
         (let [lexer (cond
-                      (utils/is-special-character? ch) {:token-with-literal (special-character->token-with-literal ch)
-                                                        :read-at (inc read-at)
-                                                        :current read-at}
+                      (utils/is-special-character? ch) (read-special-character {:in in
+                                                                                :start read-at})
                       (utils/is-letter-or-underscore? ch) (read-identifier-or-keyword {:in in
                                                                                        :start read-at})
                       (utils/is-digit? ch) (read-number {:in in
@@ -92,8 +113,7 @@
                       :else
                       {:token-with-literal {:token tokens/+illegal+
                                             :literal ch}
-                       :read-at nil
-                       :current nil})
+                       :read-at nil})
               token (get-in lexer [:token-with-literal :token])
               eof-reached? (= token
                               tokens/+eof+)
@@ -104,5 +124,4 @@
             (or (and eof-reached? tokens)
                 (throw (Exception. (str "Illegal character " (get-in lexer [:token-with-literal :literal])))))
             (recur (:read-at lexer)
-                   (:positon lexer)
                    (conj tokens (:token-with-literal lexer)))))))))

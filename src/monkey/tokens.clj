@@ -19,6 +19,8 @@
 (def +slash+ "/")
 (def +lt+ "<")
 (def +gt+ ">")
+(def +equal+ "==")
+(def +not-equal+ "!=")
 
 ;; Keywords
 (def +function+ "FUNCTION")
