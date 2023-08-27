@@ -13,6 +13,9 @@
       (= ch \() (= ch \))
       (= ch \{) (= ch \})
       (= ch \,) (= ch \+)
+      (= ch \*) (= ch \-)
+      (= ch \!) (= ch \<) 
+      (= ch \>) (= ch \/)
       (= ch 0)))
 
 (defn is-digit? [ch]

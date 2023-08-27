@@ -56,6 +56,18 @@
         :literal ch}
     \+ {:token tokens/+plus+
         :literal ch}
+    \* {:token tokens/+asterik+
+        :literal ch}
+    \- {:token tokens/+minus+
+        :literal ch}
+    \/ {:token tokens/+slash+
+        :literal ch}
+    \! {:token tokens/+bang+
+        :literal ch}
+    \< {:token tokens/+lt+
+        :literal ch}
+    \> {:token tokens/+gt+
+        :literla ch}
     0 {:token tokens/+eof+
        :literal ""}))
 
