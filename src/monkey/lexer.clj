@@ -95,33 +95,32 @@
              (default-map))
       (default-map))))
 
-(defn lex [in]
-  (loop [read-at 0
-         tokens []]
-    (let [ch (read-char in read-at)
-          skip-char? (utils/should-skip-char? ch)]
-      (if skip-char?
-        (recur (inc read-at)
-               tokens)
-        (let [lexer (cond
-                      (utils/is-special-character? ch) (read-special-character {:in in
-                                                                                :start read-at})
-                      (utils/is-letter-or-underscore? ch) (read-identifier-or-keyword {:in in
-                                                                                       :start read-at})
-                      (utils/is-digit? ch) (read-number {:in in
-                                                         :start read-at})
-                      :else
-                      {:token-with-literal {:token tokens/+illegal+
-                                            :literal ch}
-                       :read-at nil})
-              token (get-in lexer [:token-with-literal :token])
-              eof-reached? (= token
-                              tokens/+eof+)
-              illegal-char? (= token
-                               tokens/+illegal+)]
-          (if (or eof-reached?
-                  illegal-char?)
-            (or (and eof-reached? tokens)
-                (throw (Exception. (str "Illegal character " (get-in lexer [:token-with-literal :literal])))))
-            (recur (:read-at lexer)
-                   (conj tokens (:token-with-literal lexer)))))))))
+(defn tokenize
+  ([in]
+   (tokenize in 0 []))  
+  ([in read-at tokens]
+   (let [ch (read-char in read-at)
+         skip-char? (utils/should-skip-char? ch)]
+     (if skip-char?
+       (recur in (inc read-at) tokens)
+       (let [lexer (cond
+                     (utils/is-special-character? ch) (read-special-character {:in in
+                                                                               :start read-at})
+                     (utils/is-letter-or-underscore? ch) (read-identifier-or-keyword {:in in
+                                                                                      :start read-at})
+                     (utils/is-digit? ch) (read-number {:in in
+                                                        :start read-at})
+                     :else
+                     {:token-with-literal {:token tokens/+illegal+
+                                           :literal ch}
+                      :read-at nil})
+             token (get-in lexer [:token-with-literal :token])
+             eof-reached? (= token
+                             tokens/+eof+)
+             illegal-char? (= token
+                              tokens/+illegal+)]
+         (if (or eof-reached?
+                 illegal-char?)
+           (or (and eof-reached? (conj tokens (:token-with-literal lexer)))
+               (throw (Exception. (str "Illegal character " (get-in lexer [:token-with-literal :literal])))))
+           (recur in (:read-at lexer) (conj tokens (:token-with-literal lexer)))))))))
