@@ -13,6 +13,11 @@
     (rest tokens)
     (recur (rest tokens))))
 
+(defn parse-return-statement [tokens]
+  ;; [TODO] Fix later when parsing exprs
+  (let [rest-tokens (parse-exprs tokens)]
+    [[tokens/+return+] rest-tokens]))
+
 (defn parse-let-statement [tokens]
   (let [[ident-token rest-tokens] (expect-peek tokens tokens/+identifier+)
         [_ rest-tokens] (expect-peek rest-tokens tokens/+assign+)
@@ -23,6 +28,7 @@
 (defn parse-statement [[{:keys [token]} :as tokens]]
   (condp = token
     tokens/+let+ (parse-let-statement (rest tokens))
+    tokens/+return+ (parse-return-statement (rest tokens))
     (throw (Exception. "Parser Error: Can't parse statemenet"))))
 
 (defn parse-program [[current :as tokens]]
